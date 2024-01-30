@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -euo pipefail
+
+APP_NAME="epoch-api"
+DIR=$(git rev-parse --show-toplevel)
+AWS_REGION="us-west-2"
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+REPO_URL="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+IMAGE_NAME="$REPO_URL/$APP_NAME"
+
+# Fetch the latest image SHA
+get_latest_image_sha() {
+    echo "Fetching latest image SHA..."
+    LATEST_SHA=$(aws ecr describe-images \
+                    --repository-name $APP_NAME \
+                    --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageDigest' \
+                    --output text \
+                    --region $AWS_REGION)
+    echo "Latest Image SHA: $LATEST_SHA"
+}
+
+# Perform a Helm upgrade (install if not already installed)
+helm_upgrade() {
+    echo "Deploying $APP_NAME to Kubernetes via Helm..."
+    helm upgrade --install $APP_NAME "${DIR}/ops/helm" \
+        --set image.repository=$IMAGE_NAME \
+        --set image.sha256=$LATEST_SHA \
+        --atomic
+    echo "Helm deployment completed."
+}
+
+get_latest_image_sha
+helm_upgrade
+
+echo "Deployment Complete!"

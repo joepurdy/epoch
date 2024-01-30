@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SHA=$(git rev-parse --short HEAD)
+APP_NAME="epoch-api"
+AWS_REGION="us-west-2"
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+
+REPO_URL="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+IMAGE_NAME="$REPO_URL/$APP_NAME"
+
+docker_login() {
+  echo "Logging in to AWS Container Registry..."
+  aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPO_URL
+}
+
+docker_build() {
+  echo "Building container image..."
+  docker build -t $IMAGE_NAME .
+  docker tag $IMAGE_NAME $IMAGE_NAME:$SHA
+  docker tag $IMAGE_NAME $IMAGE_NAME:latest
+}
+
+docker_push() {
+  echo "Pushing container image to AWS Container Registry..."
+  docker push $IMAGE_NAME:$SHA
+  docker push $IMAGE_NAME:latest
+}
+
+docker_login
+docker_build
+docker_push
+
+echo "Build Complete!"
