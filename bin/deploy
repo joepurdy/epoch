@@ -23,7 +23,7 @@ get_latest_image_sha() {
 # Perform a Helm upgrade (install if not already installed)
 helm_upgrade() {
     echo "Deploying $APP_NAME to Kubernetes via Helm..."
-    helm upgrade --install $APP_NAME "${DIR}/ops/helm" \
+    helm upgrade --install $APP_NAME "${DIR}/ops/helm/${APP_NAME}" \
         --set image.repository=$IMAGE_NAME \
         --set image.sha256=$LATEST_SHA \
         --atomic
