@@ -8,6 +8,33 @@ AWS_REGION="us-west-2"
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 REPO_URL="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 IMAGE_NAME="$REPO_URL/$APP_NAME"
+API_HOSTNAME="${API_HOSTNAME}"
+ACM_CERTIFICATE_ARN="${ACM_CERTIFICATE_ARN}"
+
+# Create a temporary custom values file
+CUSTOM_VALUES=$(mktemp)
+echo "Creating custom values file at $CUSTOM_VALUES"
+
+cat << EOF > $CUSTOM_VALUES
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: $ACM_CERTIFICATE_ARN
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+  hosts:
+    - host: $API_HOSTNAME
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: "${API_HOSTNAME//./-}-tls"
+      hosts:
+        - $API_HOSTNAME
+EOF
 
 # Fetch the latest image SHA
 get_latest_image_sha() {
@@ -24,10 +51,12 @@ get_latest_image_sha() {
 helm_upgrade() {
     echo "Deploying $APP_NAME to Kubernetes via Helm..."
     helm upgrade --install $APP_NAME "${DIR}/ops/helm/${APP_NAME}" \
+        --values $CUSTOM_VALUES \
         --set image.repository=$IMAGE_NAME \
         --set image.sha256=$LATEST_SHA \
         --atomic
     echo "Helm deployment completed."
+    rm $CUSTOM_VALUES
 }
 
 get_latest_image_sha

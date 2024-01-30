@@ -31,7 +31,8 @@ resource "aws_subnet" "eks_subnet" {
   map_public_ip_on_launch = true
   availability_zone       = count.index == 0 ? "us-west-2a" : "us-west-2b"
   tags = {
-    Name = "eks_subnet-${count.index}"
+    Name = "eks_subnet-${count.index}",
+    "kubernetes.io/role/elb" = "1"
   }
 }
 
@@ -116,6 +117,10 @@ resource "aws_eks_cluster" "ontra_cluster" {
 
   vpc_config {
     subnet_ids = aws_subnet.eks_subnet.*.id
+  }
+
+  tags = {
+    "alpha.eksctl.io/cluster-oidc-enabled" = true
   }
 
   depends_on = [
