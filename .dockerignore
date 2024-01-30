@@ -1,0 +1,5 @@
+.envrc
+.tool-versions
+.gitignore
+Dockerfile
+ops/
