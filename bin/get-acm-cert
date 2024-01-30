@@ -1,0 +1,48 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DOMAIN_NAME="${API_HOSTNAME}"
+
+request_certificate() {
+    echo "Requesting ACM certificate for domain: $DOMAIN_NAME"
+
+    CERTIFICATE_ARN=$(aws acm request-certificate \
+        --domain-name "$DOMAIN_NAME" \
+        --validation-method DNS \
+        --query CertificateArn \
+        --output text)
+
+    echo "Certificate requested successfully."
+}
+
+fetch_validation_record() {
+    local max_attempts=10
+    local attempt=1
+
+    echo "Fetching DNS validation records..."
+    while [ $attempt -le $max_attempts ]; do
+        VALIDATION_RECORD=$(aws acm describe-certificate \
+            --certificate-arn $CERTIFICATE_ARN \
+            --query 'Certificate.DomainValidationOptions[0].ResourceRecord' \
+            --output text)
+
+        if [[ $VALIDATION_RECORD != "None" && $VALIDATION_RECORD != "" ]]; then
+            return
+        else
+            echo "Waiting for validation record to be available... (Attempt: $attempt/$max_attempts)"
+            sleep 1
+            ((attempt++))
+        fi
+    done
+
+    echo "Validation record not found after $max_attempts attempts. Please check manually."
+}
+
+request_certificate
+fetch_validation_record
+
+echo "Certificate ARN: $CERTIFICATE_ARN"
+echo "Validation record:\n$VALIDATION_RECORD"
+echo "Update the DNS record in your DNS provider for the validation record. To confirm certificate validation, use the following command:"
+echo "aws acm describe-certificate --certificate-arn $CERTIFICATE_ARN --query 'Certificate.Status' --output text"

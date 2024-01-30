@@ -1,0 +1,4 @@
+use asdf
+
+export API_HOSTNAME="changeme.example.com"
+export ACM_CERTIFICATE_ARN="<fill me out after running bin/get-acm-cert>"
