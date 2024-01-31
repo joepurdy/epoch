@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -euo pipefail
+
+DIR=$(git rev-parse --show-toplevel)
+
+# Install asdf plugins
+TOOL_VERSIONS_FILE="$DIR/.tool-versions"
+
+while IFS= read -r line || [[ -n "$line" ]]; do
+    # Extract the plugin name (first word in each line)
+    plugin=$(echo $line | awk '{print $1}')
+    
+    # Install the plugin using asdf
+    echo "Installing ASDF plugin: $plugin"
+    asdf plugin add $plugin
+done < "$TOOL_VERSIONS_FILE"
+
+echo "Plugin installation complete."
+
+# Create a new .envrc if it doesn't exist
+if [ ! -f "$DIR/.envrc" ]; then
+    cp "$DIR/.envrc.example" "$DIR/.envrc"
+fi
+
+# Allow the .envrc to be sourced
+direnv allow
+
+# Install any missing versions
+asdf direnv install

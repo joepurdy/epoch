@@ -4,6 +4,8 @@ set -euo pipefail
 
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 
+aws eks update-kubeconfig --region $AWS_REGION --name ontra-eks-cluster --alias ontra
+
 aws iam create-policy \
   --policy-name AWSLoadBalancerControllerIAMPolicy \
   --policy-document file://iam_policy.json
