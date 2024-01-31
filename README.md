@@ -25,7 +25,7 @@
 
 ## Video Overview
 
-If you want to watch an XX minute video showing a demonstration of my homework solution I have one recorded here: [joepurdy/epoch — video overview](#TBD).
+If you want to watch an 19 minute video showing a demonstration of my homework solution I have one recorded here: [joepurdy/epoch — video overview](https://youtu.be/xhI9XdwCm5I).
 
 It's completely optional and merely provided to aid in reviewing the solution and seeing a practical demonstration.
 
@@ -119,7 +119,7 @@ Once the application is deployed you can access it at `https://` + `API_HOSTNAME
 If you access the endpoint from a browser you should see the current epoch time. You can also query it via cURL from your terminal like so:
 
 ```shell
-curl -s https://`API_HOSTNAME`/
+curl -s https://$API_HOSTNAME/
 ```
 
 ## Architecture Overview
